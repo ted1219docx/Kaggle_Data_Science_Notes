@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>Quant Research Dataset Interview — Time Series Conversation</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    max-width: 1050px;
+    margin: 40px auto;
+    padding: 0 24px 60px;
+    line-height: 1.55;
+    color: #1f2937;
+    background: #f8fafc;
+}
+h1 { margin-bottom: 6px; }
+.subtitle { color: #64748b; margin-bottom: 32px; }
+.message {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin: 18px 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.role {
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #0f172a;
+}
+.user { border-left: 5px solid #64748b; }
+.assistant { border-left: 5px solid #2563eb; }
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.95em;
+    margin: 0;
+}
+.footer {
+    margin-top: 36px;
+    color: #64748b;
+    font-size: 0.9em;
+}
+</style>
+</head>
+<body>
+<h1>Quant Research Dataset Interview — Time Series Conversation</h1>
+<div class='subtitle'>Standalone transcript for offline review.</div>
+<div class='message user'>
+<div class='role'>User</div>
+<pre>I am preparing for quant researcher interview (Data set round) -- I have example notebooks covering regression and classification, but now I am worried about time series tasks. Could you read through the preparation files, and find a Kaggle data set that has financial time series and is closest to the style they assess?</pre>
+</div>
+<div class='message assistant'>
+<div class='role'>Assistant</div>
+<pre>Yes. I read both preparation documents, and I think there is a particularly good Kaggle dataset for filling the gap in your current preparation.
+
+The most important clue is in the FAQ: they explicitly say the interview is a generic dataset interview and that it is usually financial time-series data, although not always, and that prior financial domain knowledge should not be necessary.
+
+The other preparation document makes clear that the assessment is less about squeezing out the best score and more about the complete workflow: data quality, EDA, feature engineering, predictive modelling, out-of-sample testing, explaining assumptions, and communicating your reasoning. In the historical examples, weak candidates were specifically criticised for inadequate exploration, no feature engineering, and no out-of-sample testing. It also says that for the MBS exercise, a strong linear-regression baseline and feature engineering were particularly important.
+
+My first choice: Winton Stock Market Challenge
+
+I would use The Winton Stock Market Challenge on Kaggle as your main time-series practice dataset.
+
+It is unusually close to what I think Squarepoint is trying to test.
+
+Each row represents an arbitrary stock over an arbitrary five-day window. You get:
+- 25 ordinary features, Feature_1–Feature_25
+- previous-day returns
+- roughly minute-by-minute returns Ret_2 through Ret_120
+- future returns Ret_121 through Ret_180
+- future daily returns Ret_PlusOne and Ret_PlusTwo
+- observation weights
+
+The task is to predict the subsequent returns.
+
+Why I think this is better preparation than Jane Street
+
+At first glance, the newer Jane Street Real-Time Market Data Forecasting competition sounds perfect: real financial market data, 79 anonymised features, multiple instruments, chronological date_id/time_id, and a continuous target.
+
+But I wouldn&#x27;t use it as your primary interview practice dataset.
+
+It is large and has a specialised streaming evaluation setup, so you could easily spend most of your preparation learning that particular Kaggle competition rather than practising the generic workflow.
+
+Winton lets you practise:
+inspect → understand → clean → visualise → engineer → baseline → validate → improve → explain.
+
+There is an even closer dataset, but I would use it second:
+BattleFin Big Data Combine. The task is to predict the percentage change of a financial instrument two hours into the future, with multiple securities and 5-minute observations.
+
+And Jane Street should be your third exercise, ideally using only a small subset.
+
+Important point: you probably don&#x27;t need to learn ARIMA/LSTM.
+
+Your FAQ doesn&#x27;t say this is a traditional time-series forecasting interview. It says it&#x27;s a generic dataset interview that is often based on financial time-series data.
+
+So I would focus on:
+1. Datetime/index inspection
+2. Sorting correctly by asset + time
+3. Plotting time evolution
+4. Identifying temporal dependence
+5. Lag features
+6. Rolling statistics
+7. Leakage
+8. Chronological train/test splitting
+9. TimeSeriesSplit / walk-forward CV
+10. Stationarity / regime change intuition
+11. Baseline → linear → Ridge/Lasso → Random Forest/boosting
+12. Comparing in-sample vs out-of-sample performance
+
+That plugs directly into your existing regression notebook.</pre>
+</div>
+<div class='message user'>
+<div class='role'>User</div>
+<pre>somehow I cannot download the data from the Winton one... every time I click download it just refresh the page</pre>
+</div>
+<div class='message assistant'>
+<div class='role'>Assistant</div>
+<pre>That sounds like a Kaggle access/rules issue rather than anything you&#x27;re doing wrong.
+
+Try:
+1. Make sure you&#x27;re logged into Kaggle.
+2. Open the Rules tab and check whether there is an “I Understand and Accept” / “Join Competition” button.
+3. Return to the Data tab and try the individual train file rather than Download All.
+4. If it still refreshes, try an incognito window or another browser with extensions disabled.
+
+You can also try the Kaggle CLI:
+
+kaggle competitions download -c the-winton-stock-market-challenge
+
+But the API will still fail if Kaggle hasn&#x27;t recorded acceptance of the competition rules.
+
+Alternatively, I wouldn&#x27;t spend much time fighting an old competition page. We can choose a currently downloadable financial time-series dataset with multiple features, a clear regression target, chronological leakage concerns, manageable size, and a good sklearn/pandas workflow.</pre>
+</div>
+<div class='message user'>
+<div class='role'>User</div>
+<pre>ok. I am not very familiar with how to deal with time series data -- could you give me a roadmap of the stages to carry out the project</pre>
+</div>
+<div class='message assistant'>
+<div class='role'>Assistant</div>
+<pre>For your interview prep, treat a time-series project as the same broad workflow you already use for regression/classification, but with one extra principle running through the whole project:
+
+time ordering must be respected everywhere.
+
+Roadmap
+
+1. Understand the structure of the data
+- What does one row represent?
+- One asset or many?
+- What is the target?
+- What is the sampling frequency?
+- Are timestamps equally spaced?
+- Are there duplicate timestamps or gaps?
+- Could any variable only become known after the prediction time?
+
+Typical checks:
+df.shape
+df.head()
+df.info()
+df.describe(include=&quot;all&quot;)
+df[&quot;date&quot;].min(), df[&quot;date&quot;].max()
+
+Then sort:
+df = df.sort_values([&quot;asset_id&quot;, &quot;date&quot;])
+
+2. Perform data-quality checks
+- missing values
+- duplicates
+- impossible values
+- constant columns
+- extreme values
+- gaps in time
+
+Example:
+df[&quot;time_diff&quot;] = df[&quot;date&quot;].diff()
+df[&quot;time_diff&quot;].value_counts().head()
+
+3. Plot the target through time
+Look for:
+- trends
+- volatility clustering
+- regime changes
+- structural breaks
+- non-stationarity
+- unusual periods
+
+Rolling summaries:
+df[&quot;rolling_mean_20&quot;] = df[&quot;target&quot;].rolling(20).mean()
+df[&quot;rolling_std_20&quot;] = df[&quot;target&quot;].rolling(20).std()
+
+4. Understand the target distribution
+Use describe() and histograms.
+For returns, do not automatically delete extreme values because they may be real market events.
+
+5. Investigate temporal dependence
+Ask whether the past tells you anything about the future.
+
+Lag correlation:
+for lag in [1, 2, 5, 10, 20]:
+    print(lag, df[&quot;target&quot;].corr(df[&quot;target&quot;].shift(lag)))
+
+Also consider autocorrelation of absolute or squared returns because volatility can be persistent even when raw returns are not.
+
+6. Split train and test chronologically
+Avoid random train_test_split.
+
+Example:
+split_idx = int(len(df) * 0.8)
+train = df.iloc[:split_idx]
+test = df.iloc[split_idx:]
+
+7. Create simple baselines
+Start with zero/mean prediction, then linear regression.
+Progression:
+Naive baseline → Linear → Ridge/Lasso → Random Forest → Gradient Boosting
+
+8. Engineer time-series features
+Useful features:
+- lagged values
+- rolling mean
+- rolling volatility
+- momentum
+- range features
+- calendar features
+
+For leakage safety:
+past = df[&quot;target&quot;].shift(1)
+df[&quot;mean_20&quot;] = past.rolling(20).mean()
+df[&quot;vol_20&quot;] = past.rolling(20).std()
+
+9. Be extremely careful about leakage
+Every feature should have a timestamp describing when it becomes observable.
+At prediction time t, every feature must be known at or before t.
+
+10. Use time-aware cross-validation
+Use TimeSeriesSplit rather than shuffled KFold.
+
+11. Compare models out of sample
+Use CV RMSE, test RMSE, MAE, R², etc.
+For financial returns, R² near zero is not automatically a failure.
+
+12. Examine performance through time
+Plot errors through time and evaluate by period/regime.
+
+13. Interpret features
+Check coefficient stability, feature importance, and whether signals remain useful across periods.
+
+14. Robustness checks
+Try:
+- expanding vs rolling windows
+- different target horizons
+- different market periods
+- sensitivity to extreme observations
+
+15. Final presentation structure
+1. Prediction problem
+2. Unit of observation
+3. Data-quality findings
+4. EDA
+5. Temporal structure
+6. Train/test methodology
+7. Leakage prevention
+8. Feature engineering
+9. Baseline
+10. Model comparison
+11. Out-of-sample results
+12. Interpretation
+13. Limitations
+14. Next steps
+
+Mental model:
+UNDERSTAND
+↓
+CLEAN
+↓
+SORT BY TIME
+↓
+EDA
+↓
+CHECK TEMPORAL DEPENDENCE
+↓
+CHRONOLOGICAL SPLIT
+↓
+NAIVE BASELINE
+↓
+LAG / ROLLING FEATURES
+↓
+LINEAR BASELINE
+↓
+TIME-SERIES CV
+↓
+TREE / BOOSTING MODELS
+↓
+OUT-OF-SAMPLE TEST
+↓
+PERFORMANCE THROUGH TIME
+↓
+INTERPRET + DISCUSS LIMITATIONS
+
+Three questions to keep asking:
+1. Could this feature contain future information?
+2. Does my validation actually simulate predicting the future?
+3. Is the relationship stable through time?</pre>
+</div>
+<div class='message user'>
+<div class='role'>User</div>
+<pre>Every feature should have a timestamp describing when it becomes observable. -- how do I enforce it?</pre>
+</div>
+<div class='message assistant'>
+<div class='role'>Assistant</div>
+<pre>You enforce it by making information availability time part of your feature-engineering logic, not necessarily by literally adding a timestamp column for every feature.
+
+Suppose your target is y_t = r_{t+1}: predict the next-period return using information available up to time t.
+
+Then every feature must satisfy:
+feature information time &lt;= t
+
+Practical approach:
+- Define the prediction timestamp explicitly.
+- Build features only from rows available by that point.
+
+Lagged returns:
+df[&quot;ret_lag_1&quot;] = df[&quot;return&quot;].shift(1)
+df[&quot;ret_lag_5&quot;] = df[&quot;return&quot;].shift(5)
+
+Rolling features:
+past = df[&quot;return&quot;].shift(1)
+df[&quot;rolling_mean_20&quot;] = past.rolling(20).mean()
+df[&quot;rolling_vol_20&quot;] = past.rolling(20).std()
+
+For multiple assets:
+df = df.sort_values([&quot;asset_id&quot;, &quot;date&quot;])
+df[&quot;ret_lag_1&quot;] = df.groupby(&quot;asset_id&quot;)[&quot;return&quot;].shift(1)
+
+Another leakage source is external features published with delay. Observation period and release time are different things. You should only use a feature once its release_time &lt;= prediction_time.
+
+For delayed data, pd.merge_asof is often useful:
+pd.merge_asof(
+    predictions.sort_values(&quot;prediction_time&quot;),
+    macro.sort_values(&quot;release_time&quot;),
+    left_on=&quot;prediction_time&quot;,
+    right_on=&quot;release_time&quot;,
+    direction=&quot;backward&quot;,
+)
+
+Preprocessing itself can leak information too. Fit scalers/imputers only on the training window, ideally inside a Pipeline.
+
+A useful audit table is:
+Feature | Source | Latest data used | Known at prediction time?
+
+The subtle point is that current row does not automatically mean available. It depends on the exact prediction moment.
+
+A good interview explanation:
+“I first defined the prediction time and the information set available at that time. Lagged and rolling features were constructed only from observations available strictly before the prediction point, external variables were aligned by release time rather than observation period, and all preprocessing was fitted only on the training window.”</pre>
+</div>
+<div class='message user'>
+<div class='role'>User</div>
+<pre>external features published with delay.
+
+Could you explain in greater detail how we can handle this?</pre>
+</div>
+<div class='message assistant'>
+<div class='role'>Assistant</div>
+<pre>This is one of the most important sources of subtle leakage in financial time-series work.
+
+The core issue is that an external variable usually has at least two different dates:
+1. The period the data describes
+2. The time the data actually became known
+
+Example:
+economic_period | release_time | CPI
+July            | 14 Aug 07:00 | 3.1
+August          | 16 Sep 07:00 | 3.0
+
+If you are predicting on 15 September, you cannot use August CPI just because it describes August. It had not yet been released.
+
+The rule is:
+release_time &lt;= prediction_time
+
+Why a normal merge is dangerous:
+market.merge(macro, left_on=&quot;month&quot;, right_on=&quot;economic_period&quot;)
+can leak future information.
+
+Use merge_asof:
+df = pd.merge_asof(
+    market.sort_values(&quot;prediction_time&quot;),
+    macro.sort_values(&quot;release_time&quot;),
+    left_on=&quot;prediction_time&quot;,
+    right_on=&quot;release_time&quot;,
+    direction=&quot;backward&quot;
+)
+
+This asks:
+“For every prediction timestamp, what was the most recently released macro observation available?”
+
+Three dates to think about:
+- observation_period
+- release_time
+- prediction_time
+
+Revisions are another subtle problem.
+If GDP is first reported at 2.1% and later revised to 1.8%, a backtest for the earlier date should use 2.1%, not today&#x27;s revised value.
+
+That leads to point-in-time data:
+“What value would I actually have seen if I had queried this dataset at time t?”
+
+For company fundamentals:
+quarter_end is not the same as announcement_time.
+Use announcement_time to decide when a value becomes available.
+
+For analyst estimates:
+keep historical estimate snapshots, not only the final/latest value.
+
+For credit ratings:
+use effective_from / effective_to dates.
+
+For weather and energy:
+if predicting tomorrow&#x27;s electricity demand today, use today&#x27;s weather forecast for tomorrow, not tomorrow&#x27;s actual temperature.
+
+A useful data model:
+external = DataFrame({
+    &quot;observation_period&quot;: ...,
+    &quot;available_from&quot;: ...,
+    &quot;value&quot;: ...
+})
+
+Then merge by prediction_time using merge_asof.
+
+For multiple assets:
+pd.merge_asof(
+    market.sort_values([&quot;ticker&quot;, &quot;prediction_time&quot;]),
+    fundamentals.sort_values([&quot;ticker&quot;, &quot;release_time&quot;]),
+    left_on=&quot;prediction_time&quot;,
+    right_on=&quot;release_time&quot;,
+    by=&quot;ticker&quot;,
+    direction=&quot;backward&quot;
+)
+
+Audit it:
+assert (
+    df[&quot;release_time&quot;].isna()
+    | (df[&quot;release_time&quot;] &lt;= df[&quot;prediction_time&quot;])
+).all()
+
+If you only know a fixed publication lag:
+df[&quot;feature_available&quot;] = df[&quot;feature&quot;].shift(1)
+or shift(2), etc., but explicit timestamps are safer.
+
+If only daily dates are provided and exact release time is unknown, a conservative approach is to lag the feature until the next observation.
+
+Missing external features can be structural temporal missingness: the new number may simply not have been published yet. Forward-filling can be valid after release-time alignment because you are carrying forward the latest known value.
+
+Full workflow:
+1. Identify what each observation refers to.
+2. Find the publication/release timestamp.
+3. Define exactly when predictions are made.
+4. Align external data using release time.
+5. Use latest value with release_time &lt;= prediction_time.
+6. Handle revisions using historical vintages if available.
+7. Forward-fill only after correct alignment.
+8. Assert that no release timestamp exceeds prediction time.
+
+Concise interview explanation:
+“Because the observation month and information-availability date are different, I align external data by release date rather than observation period. I use an as-of join to carry forward the latest value actually known at the prediction timestamp. If vintage data are available, I use the historical value known at the time rather than today&#x27;s revised value.”</pre>
+</div>
+<div class='footer'>Generated from this ChatGPT conversation for personal interview preparation.</div>
+</body></html>
